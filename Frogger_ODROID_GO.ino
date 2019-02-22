@@ -6,6 +6,7 @@
 #include <odroid_go.h>
 //#include <EEPROM.h>
 //Screen size is 320x240
+
 //colors
 const unsigned int FROGCOL = 1216; //0x04C0
 const unsigned int WATER = 32311; //0x7E37
@@ -53,6 +54,7 @@ uint8_t screenBl = 150;
 uint8_t clipped = 0;
 bool volume = false;
 int highestScore = 0;
+bool pressed = false;
 
 void setup(){
   //SD.begin();
@@ -80,14 +82,17 @@ void loop(){
 void gameloop(){
   drawFixed();
   while(1){
+  pressed = false;
   GO.update();
+  checkMovements();
   printBg();
   printTrees();
   printFrog();
+  if (!pressed) checkMovements();
   moveObjects();
   printCars();
   checkCollisions();
-  checkMovements();
+  if (!pressed) checkMovements();
   moveIfClipped();
   if (lifes > 0){
     GO.lcd.setTextSize(1);
@@ -96,7 +101,7 @@ void gameloop(){
   }
   else {break;}
   delay(30);
-  checkMovements();
+  if (!pressed) checkMovements();
   }
   }
   
@@ -121,11 +126,11 @@ void checkCollisions(){
      ((frog_x >= car3_x) && (frog_x <= (car3_x + 20)) && (frog_y >= car3_y) && (frog_y <= (car3_y + 10))) ||
      ((frog_x >= car4_x) && (frog_x <= (car4_x + 20)) && (frog_y >= car4_y) && (frog_y <= (car4_y + 10))) ||
      ((frog_x >= car5_x) && (frog_x <= (car5_x + 20)) && (frog_y >= car5_y) && (frog_y <= (car5_y + 10)))) dead();
-  if ((frog_x >= (tree1_x - 10)) && (frog_x <= (tree1_x + 60)) && (frog_y >= tree1_y) && (frog_y <= (tree1_y + 10)) && (clipped != 1)){delta = frog_x - tree1_x; clipped = 1;}
-  if ((frog_x >= (tree2_x - 10)) && (frog_x <= (tree2_x + 75)) && (frog_y >= tree2_y) && (frog_y <= (tree2_y + 10)) && (clipped != 2)){delta = frog_x - tree2_x; clipped = 2;}
-  if ((frog_x >= (tree3_x - 10)) && (frog_x <= (tree3_x + 60)) && (frog_y >= tree3_y) && (frog_y <= (tree3_y + 10)) && (clipped != 3)){delta = frog_x - tree3_x; clipped = 3;}
-  if ((frog_x >= (tree4_x - 10)) && (frog_x <= (tree4_x + 75)) && (frog_y >= tree4_y) && (frog_y <= (tree4_y + 10)) && (clipped != 4)){delta = frog_x - tree4_x; clipped = 4;}
-  if ((frog_x >= (tree5_x - 10)) && (frog_x <= (tree5_x + 60)) && (frog_y >= tree5_y) && (frog_y <= (tree5_y + 10)) && (clipped != 5)){delta = frog_x - tree5_x; clipped = 5;}
+  if ((frog_x >= (tree1_x - 8)) && (frog_x <= (tree1_x + 55)) && (frog_y >= tree1_y) && (frog_y <= (tree1_y + 10)) && (clipped != 1)){delta = frog_x - tree1_x; clipped = 1;}
+  if ((frog_x >= (tree2_x - 8)) && (frog_x <= (tree2_x + 70)) && (frog_y >= tree2_y) && (frog_y <= (tree2_y + 10)) && (clipped != 2)){delta = frog_x - tree2_x; clipped = 2;}
+  if ((frog_x >= (tree3_x - 8)) && (frog_x <= (tree3_x + 55)) && (frog_y >= tree3_y) && (frog_y <= (tree3_y + 10)) && (clipped != 3)){delta = frog_x - tree3_x; clipped = 3;}
+  if ((frog_x >= (tree4_x - 8)) && (frog_x <= (tree4_x + 70)) && (frog_y >= tree4_y) && (frog_y <= (tree4_y + 10)) && (clipped != 4)){delta = frog_x - tree4_x; clipped = 4;}
+  if ((frog_x >= (tree5_x - 8)) && (frog_x <= (tree5_x + 55)) && (frog_y >= tree5_y) && (frog_y <= (tree5_y + 10)) && (clipped != 5)){delta = frog_x - tree5_x; clipped = 5;}
   //check collision with river
   if ((frog_y > 40) && (frog_y < 120) && (clipped == 0)) dead();
   if ((frog_y > 17) && (frog_y < 40)) win();
@@ -204,16 +209,17 @@ void printBg(){
   }
   
 void checkMovements(){
-  if (movement >= 6) movement = 0;
+  pressed = true;
+  if (movement >= 2) movement = 0;
   if ((GO.JOY_Y.isAxisPressed() == 2) && (movement == 0)) {frog_y -= 16; movement ++; clipped = 0; delta = 0;}
   else if ((GO.JOY_Y.isAxisPressed() == 1) && (movement == 0)) {frog_y += 16; movement ++; clipped = 0; delta = 0;}
   else if ((GO.JOY_X.isAxisPressed() == 2) && (movement == 0)) {frog_x -= 16; movement ++;}
   else if ((GO.JOY_X.isAxisPressed() == 1) && (movement == 0)) {frog_x += 16; movement ++;}
   else movement ++;
-  if (frog_x < 0) {frog_x += 16;}
-  if (frog_x > 300) {frog_x -= 16;}
-  if (frog_y > 233) {frog_y -= 16;}
-  if (frog_y < 17) {frog_y += 16;}
+  if ((frog_x < 0) && (clipped == 0)) {frog_x += 16;}
+  if ((frog_x > 300) && (clipped == 0)) {frog_x -= 16;}
+  if ((frog_y > 233) && (clipped == 0)) {frog_y -= 16;}
+  if ((frog_y < 17) && (clipped == 0)) {frog_y += 16;}
   if (GO.BtnStart.isPressed() == 1 && screenBl < 175){
     screenBl += 50;
     GO.lcd.setBrightness(screenBl);
@@ -300,14 +306,18 @@ void intro(){
   GO.lcd.setTextSize(2);
   GO.lcd.setTextColor(WHITE);
   GO.lcd.print("ODROID-GO Version");
-  GO.lcd.setCursor(100, 130);
+  GO.lcd.setCursor(63, 130);
   GO.lcd.setTextColor(RED);
-  GO.lcd.print("Loading...");
+  GO.lcd.print("Press A to start");
   GO.lcd.setTextSize(1);
   GO.lcd.setTextColor(WHITE);
-  GO.lcd.setCursor(85, 200);
+  GO.lcd.setCursor(83, 200);
   GO.lcd.print("federicopappani.it - 2019");
-  delay(3000);
+  //delay(3000);
+  while(1){
+    if(GO.BtnA.isPressed() == 1) break;
+    GO.update();
+    }
   GO.update();
   }
 
